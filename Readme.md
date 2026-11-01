@@ -1,20 +1,25 @@
 # Pizzería - Kotlin
 
-Aplicación de consola en Kotlin que simula el pedido de una pizzería: registra los datos del cliente, calcula el total con descuento, verifica el stock de ingredientes y genera un resumen del pedido.
+Aplicación de consola en Kotlin que simula la operación de una pizzería: registra clientes con validación de datos, controla el inventario de ingredientes, procesa pedidos, asigna repartidores y genera un reporte del día y un resumen detallado de cada pedido.
 
-**Asignatura:** Desarrollo de Aplicaciones Móviles I (PMY2201) - Duoc UC
-**Actividad:** Formativa 1, Semana 1 - Conceptos base de Kotlin
+**Asignatura:** Desarrollo App Móviles (PMY2201) - Duoc UC
+**Actividad:** Formativa, Semana 2 - Aplicando utilidades de Kotlin
 **Autora:** Francisca Valenzuela
 
 ## Funcionalidades
 
-- Captura el nombre, la dirección y el teléfono del cliente.
-- Valida las entradas. Si un dato es inválido o viene vacío, se muestra un aviso y se usa un mensaje general ("Nombre no informado", "Dirección no informada", "Teléfono no informado").
-- El teléfono debe tener exactamente 9 dígitos numéricos.
-- Si la cantidad de pizzas es inválida, se usa 1 por defecto.
-- Calcula el subtotal y aplica un **10 % de descuento** cuando se piden **más de 3 pizzas**.
-- Verifica el stock: cada pizza consume 1 unidad de ingredientes. Si hay stock, confirma el pedido, descuenta el inventario y asigna repartidor. Si no hay, rechaza el pedido con total 0 y sin repartidor.
-- Muestra un resumen con los datos del cliente, la información de la pizza y los detalles del pedido.
+- **Registro de clientes:** valida nombre, dirección, teléfono y correo. Si un dato es inválido, muestra un aviso y usa un valor predeterminado (`(000) 000-0000`, `correo@invalido.com`, "Nombre no informado", "Dirección no informada").
+- **Validación de teléfono y correo** con expresiones regulares. El teléfono acepta 9 dígitos que empiezan con 9, con o sin `+56`.
+- **Control de inventario:** antes de aceptar un pedido se verifica con un `when` que haya ingredientes suficientes. Si faltan, se rechaza el pedido, se indican los ingredientes insuficientes y los pasos para reabastecer.
+- **Cálculo de totales:** subtotal, descuento del 10 % si se piden más de 3 pizzas e IVA del 19 % sobre el monto ya descontado.
+- **Preparación de lotes:** calcula los ingredientes necesarios para un lote de pizzas y actualiza el inventario automáticamente.
+- **Despacho:** asigna el repartidor disponible más cercano.
+- **Reporte del día:** lista todos los pedidos (cliente, pizzas, total y estado) y los agrupa en completados y pendientes.
+- **Resumen de cada pedido:** datos del cliente, productos (nombre, precio y cantidad), totales y estado.
+- **Notificaciones:** se envían solo a clientes registrados.
+- **Manejo de errores:** costo de pedido inválido, texto no numérico y cantidades negativas en el inventario, con mensajes claros.
+- - **Reabastecimiento interactivo:** solicita por consola la cantidad a reponer y valida la entrada con `try-catch`, repitiendo la pregunta hasta que el dato sea válido.
+- **Ingredientes únicos del menú:** usa un `Set` para listar los ingredientes distintos y verificar que todos estén registrados en el inventario.
 
 ## Estructura del proyecto
 
@@ -22,44 +27,65 @@ Aplicación de consola en Kotlin que simula el pedido de una pizzería: registra
 src/
  ├── Main.kt
  ├── model/
+ │    ├── EstadoPedido.kt
+ │    ├── Usuario.kt
  │    ├── Cliente.kt
- │    ├── Pizza.kt
+ │    ├── Repartidor.kt
+ │    ├── Producto.kt
+ │    ├── TotalesPedido.kt
  │    └── Pedido.kt
  └── utils/
+      ├── Formato.kt
       ├── Validaciones.kt
-      └── Calculos.kt
+      ├── Calculos.kt
+      ├── Inventario.kt
+      ├── Despacho.kt
+      └── Reportes.kt
 ```
 
 | Archivo | Descripción |
 |---|---|
-| `Main.kt` | Flujo principal: entrada de datos, pedido, stock y resumen. |
-| `model/Cliente.kt` | Datos del cliente (nombre, dirección, teléfono). |
-| `model/Pizza.kt` | Datos de la pizza e inventario de ingredientes (`var`, porque se descuenta). |
-| `model/Pedido.kt` | Datos del pedido: id, cantidad, total, estado y repartidor. |
-| `utils/Validaciones.kt` | Funciones que validan texto, teléfono y cantidad; devuelven `null` si la entrada no es válida. |
-| `utils/Calculos.kt` | Subtotal, descuento, total y verificación de stock. |
+| `Main.kt` | Flujo principal: registro de clientes, procesamiento de pedidos, despacho, reporte y resúmenes. |
+| `model/EstadoPedido.kt` | Enum con los estados: En preparación, Listo y En camino. |
+| `model/Usuario.kt` | Clase base (`open`) con nombre, teléfono y correo. |
+| `model/Cliente.kt` | Hereda de `Usuario` y agrega la dirección. |
+| `model/Repartidor.kt` | Hereda de `Usuario`; incluye distancia, disponibilidad y `entregarPedido()`. |
+| `model/Producto.kt` | Nombre, precio e ingredientes; método `detallarProducto()`. |
+| `model/TotalesPedido.kt` | Data class con subtotal, descuento, impuestos y total. |
+| `model/Pedido.kt` | Cliente, productos, notas opcionales, estado y repartidor; métodos `calcularTotal()` y `cambiarEstado()`. |
+| `utils/Formato.kt` | Función de extensión para mostrar montos en pesos (`$26.000`). |
+| `utils/Validaciones.kt` | Validación de texto, teléfono, correo y conversión de precios. |
+| `utils/Calculos.kt` | Cálculo de descuento, IVA y total. |
+| `utils/Inventario.kt` | Inventario (`Map`), verificación con `when`, preparación de lotes y reabastecimiento. |
+| `utils/Despacho.kt` | Asignación del repartidor disponible más cercano con `find`. |
+| `utils/Reportes.kt` | Reporte del día, resumen del pedido y notificaciones. |
 
 ## Cómo ejecutarlo
 
 1. Clona el repositorio o descarga el proyecto.
 2. Ábrelo con IntelliJ IDEA.
 3. Abre `src/Main.kt` y ejecuta `main()` con el botón ▶ (Run 'MainKt').
-4. Responde en la consola las preguntas que aparecen.
+4. El programa corre con datos de ejemplo y muestra el resultado en la consola.
 
-## Ejemplo de uso
+> Si las tildes no se ven bien, agrega `-Dfile.encoding=UTF-8` en las VM options de la configuración de ejecución.
 
-Con una cantidad de 5 pizzas (precio unitario $1500):
+## Ejemplo de salida
 
-- Subtotal: $7500.0
-- Descuento 10 %: -$750.0
-- Total final a pagar: $6750.0
-- Estado del pedido: Preparación
+Pedido de 4 pizzas (2 Vegetariana a $8.200 y 2 Hawaiana a $8.900):
+
+- Subtotal: $34.200
+- Descuento (10 %): -$3.420
+- IVA (19 %): $5.848
+- Total final: $36.628
+- Estado del pedido: Listo
 
 ## Conceptos de Kotlin aplicados
 
-- Uso de `val` y `var` con tipos explícitos.
-- Manejo de nulos con `?.`, `?:` y `isNullOrBlank()`.
-- Conversiones seguras con `toIntOrNull()`.
-- Expresiones `if` y `run`.
-- Funciones reutilizables organizadas en paquetes (`model` y `utils`).
-- Constantes con `const val`.
+- **Flujos de control:** `when` para verificar inventario, `if` como expresión, ciclos `for`.
+- **Arreglos y colecciones:** `Array<Pedido>`, `listOf`, `Map` / `MutableMap`, `filter`, `find`, `groupBy`, `sortedBy`, `flatMap`.
+- **Strings:** plantillas (`"$variable"` y `"${expresión}"`), expresiones regulares, `padEnd` y `padStart` para dar formato.
+- **Funciones:** funciones reutilizables, funciones de extensión y `const val`.
+- **POO:** clases, `data class`, `enum class`, herencia (`open`, `override`) y polimorfismo.
+- **Manejo de errores:** `try-catch`, `require` y excepciones (`IllegalArgumentException`, `NumberFormatException`).
+- **Nulls:** operadores `?.` y `?:`, `let` y `takeIf`.
+- - **Arreglos y colecciones:** `Array<Pedido>`, `listOf`, `Set`, `Map` / `MutableMap`, `filter`, `find`, `groupBy`, `sortedBy`, `flatMap`.
