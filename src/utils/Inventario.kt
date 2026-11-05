@@ -5,12 +5,12 @@ import model.Producto
 const val UNIDADES_POR_INGREDIENTE = 1
 
 fun crearInventario(): MutableMap<String, Int> = mutableMapOf(
-    "Masa" to 10,
-    "Salsa de tomate" to 10,
-    "Queso mozzarella" to 10,
+    "Masa" to 20,
+    "Salsa de tomate" to 20,
+    "Queso mozzarella" to 20,
     "Pepperoni" to 3,
-    "Jamón" to 4,
-    "Piña" to 4,
+    "Jamón" to 8,
+    "Piña" to 8,
     "Champiñones" to 2,
     "Aceitunas" to 2
 )

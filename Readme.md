@@ -1,91 +1,88 @@
 # Pizzería - Kotlin
 
-Aplicación de consola en Kotlin que simula la operación de una pizzería: registra clientes con validación de datos, controla el inventario de ingredientes, procesa pedidos, asigna repartidores y genera un reporte del día y un resumen detallado de cada pedido.
+Aplicación de consola en Kotlin que simula la operación de una pizzería: registra clientes con validación,
+controla inventario, procesa pedidos con descuentos y promociones, asigna repartidores y genera un resumen final.
 
 **Asignatura:** Desarrollo App Móviles (PMY2201) - Duoc UC
-**Actividad:** Formativa, Semana 2 - Aplicando utilidades de Kotlin
+**Actividad:** Sumativa, Semana 3 - Creando soluciones con Kotlin
 **Autora:** Francisca Valenzuela
 
-## Funcionalidades
+## Funcionalidades de la Semana 3
 
-- **Registro de clientes:** valida nombre, dirección, teléfono y correo. Si un dato es inválido, muestra un aviso y usa un valor predeterminado (`(000) 000-0000`, `correo@invalido.com`, "Nombre no informado", "Dirección no informada").
-- **Validación de teléfono y correo** con expresiones regulares. El teléfono acepta 9 dígitos que empiezan con 9, con o sin `+56`.
-- **Control de inventario:** antes de aceptar un pedido se verifica con un `when` que haya ingredientes suficientes. Si faltan, se rechaza el pedido, se indican los ingredientes insuficientes y los pasos para reabastecer.
-- **Cálculo de totales:** subtotal, descuento del 10 % si se piden más de 3 pizzas e IVA del 19 % sobre el monto ya descontado.
-- **Preparación de lotes:** calcula los ingredientes necesarios para un lote de pizzas y actualiza el inventario automáticamente.
-- **Despacho:** asigna el repartidor disponible más cercano.
-- **Reporte del día:** lista todos los pedidos (cliente, pizzas, total y estado) y los agrupa en completados y pendientes.
-- **Resumen de cada pedido:** datos del cliente, productos (nombre, precio y cantidad), totales y estado.
-- **Notificaciones:** se envían solo a clientes registrados.
-- **Manejo de errores:** costo de pedido inválido, texto no numérico y cantidades negativas en el inventario, con mensajes claros.
-- - **Reabastecimiento interactivo:** solicita por consola la cantidad a reponer y valida la entrada con `try-catch`, repitiendo la pregunta hasta que el dato sea válido.
-- **Ingredientes únicos del menú:** usa un `Set` para listar los ingredientes distintos y verificar que todos estén registrados en el inventario.
+- **Regex:** valida el correo (`nombre@dominio.com`) y, si es inválido, muestra el error y pide reingresarlo.
+  Formatea teléfonos con código de país, paréntesis y guion:
+    - Móviles chilenos (9 dígitos, empiezan con 9, con o sin `+56`): `+56 (9) XXXX-XXXX`.
+    - Números internacionales de 12 dígitos: `+XX (XXX) XXX-XXXX`.
 
-## Estructura del proyecto
+  | Entrada | Resultado |
+    |---|---|
+  | `987654321` | `+56 (9) 8765-4321` |
+  | `+56 9 8765 4321` | `+56 (9) 8765-4321` |
+  | `+34 600 123 4567` | `+34 (600) 123-4567` |
+  | `12345` | inválido (se vuelve a pedir) |
+
+  > **Decisión de diseño:** el patrón `+XX (XXX) XXX-XXXX` exige 12 dígitos, pero un número chileno tiene
+  > 11 con el código de país (56 + 9 dígitos). Por eso se mantiene la misma estructura (código, paréntesis y
+  > guion) y se ajustan los bloques según el largo del número.
+- **Ranges:** `PERIODO_PROMOCION` (rango de fechas, del 2026-11-01 al 2026-11-30) aplica descuento si el pedido
+  cae dentro del periodo; `RANGO_CANTIDAD` (1..100) valida la cantidad de productos y vuelve a pedirla si está
+  fuera de rango.
+- **Anotación `@Promocionable`:** marca `Pizza` (15 %) y `Combo` (20 %); el procesamiento del pedido la lee con
+  reflection para saber qué productos reciben descuento promocional. `Bebida` no la lleva, por lo que no recibe
+  descuento.
+- **Reflection:** lista propiedades y métodos de `Cliente`, `Pedido`, `Producto`, `Pizza` y `Combo`
+  (usa reflection de Java, no requiere la librería `kotlin-reflect`).
+- **Sobrecarga de operadores:** `Pedido + Pedido` combina pedidos del mismo cliente y recalcula el total
+  (con descuentos); `Producto == Producto` compara por nombre y categoría.
+- **Desestructuración:** `val (nombre, correo, telefono) = cliente` y `val (cliente, productos, total) = pedido`.
+- **equals/hashCode:** `Cliente` (nombre + correo) y `Producto` (nombre + categoría); `Registro<T>` usa un `Set`
+  para evitar duplicados al registrar clientes y productos.
+- **Resumen final** en consola con todo lo anterior: pedidos combinados, cliente desestructurado,
+  productos promocionables, validación de igualdad, reflection y validaciones.
+
+## Reglas de negocio
+
+- **Menú:** Pepperoni ($8.500), Hawaiana ($8.900), Vegetariana ($8.200), Combo Hawaiana + Bebida ($11.500)
+  y Bebida 1.5L ($2.500).
+- **Descuento por volumen:** 10 % del subtotal cuando el pedido tiene más de 3 pizzas
+  (las bebidas no cuentan).
+- **Descuento promocional:** solo si la fecha del pedido está dentro del periodo de promoción y solo para
+  productos `@Promocionable` (15 % pizzas, 20 % combos). Se suma al descuento por volumen.
+- **IVA:** 19 % sobre el monto ya descontado.
+- **Inventario:** cada pizza consume 1 unidad de cada uno de sus ingredientes. Si falta stock, el pedido se
+  rechaza, se informa qué falta y se puede reabastecer para reintentarlo.
+- **Estados del pedido:** En preparación, Listo y En camino.
+- **Despacho:** se asigna el repartidor disponible más cercano; al entregar, el pedido pasa a "En camino" y el
+  repartidor queda ocupado.
+
+## Estructura
 
 ```
 src/
  ├── Main.kt
- ├── model/
- │    ├── EstadoPedido.kt
- │    ├── Usuario.kt
- │    ├── Cliente.kt
- │    ├── Repartidor.kt
- │    ├── Producto.kt
- │    ├── TotalesPedido.kt
- │    └── Pedido.kt
- └── utils/
-      ├── Formato.kt
-      ├── Validaciones.kt
-      ├── Calculos.kt
-      ├── Inventario.kt
-      ├── Despacho.kt
-      └── Reportes.kt
+ ├── model/   Categoria, Promocionable, Producto, TiposProducto (Pizza, Combo, Bebida),
+ │            Usuario, Cliente, Repartidor, Pedido, EstadoPedido, TotalesPedido
+ └── utils/   Validaciones, Entrada, Promociones, Reflexion, Registro, Calculos,
+              Inventario, Despacho, Formato, Reportes, Resumen
 ```
-
-| Archivo | Descripción |
-|---|---|
-| `Main.kt` | Flujo principal: registro de clientes, procesamiento de pedidos, despacho, reporte y resúmenes. |
-| `model/EstadoPedido.kt` | Enum con los estados: En preparación, Listo y En camino. |
-| `model/Usuario.kt` | Clase base (`open`) con nombre, teléfono y correo. |
-| `model/Cliente.kt` | Hereda de `Usuario` y agrega la dirección. |
-| `model/Repartidor.kt` | Hereda de `Usuario`; incluye distancia, disponibilidad y `entregarPedido()`. |
-| `model/Producto.kt` | Nombre, precio e ingredientes; método `detallarProducto()`. |
-| `model/TotalesPedido.kt` | Data class con subtotal, descuento, impuestos y total. |
-| `model/Pedido.kt` | Cliente, productos, notas opcionales, estado y repartidor; métodos `calcularTotal()` y `cambiarEstado()`. |
-| `utils/Formato.kt` | Función de extensión para mostrar montos en pesos (`$26.000`). |
-| `utils/Validaciones.kt` | Validación de texto, teléfono, correo y conversión de precios. |
-| `utils/Calculos.kt` | Cálculo de descuento, IVA y total. |
-| `utils/Inventario.kt` | Inventario (`Map`), verificación con `when`, preparación de lotes y reabastecimiento. |
-| `utils/Despacho.kt` | Asignación del repartidor disponible más cercano con `find`. |
-| `utils/Reportes.kt` | Reporte del día, resumen del pedido y notificaciones. |
 
 ## Cómo ejecutarlo
 
-1. Clona el repositorio o descarga el proyecto.
-2. Ábrelo con IntelliJ IDEA.
-3. Abre `src/Main.kt` y ejecuta `main()` con el botón ▶ (Run 'MainKt').
-4. El programa corre con datos de ejemplo y muestra el resultado en la consola.
+1. Abre el proyecto con IntelliJ IDEA.
+2. Ejecuta `main()` en `src/Main.kt` (▶ Run 'MainKt').
+3. El programa es interactivo: los datos se ingresan por la consola de IntelliJ.
 
-> Si las tildes no se ven bien, agrega `-Dfile.encoding=UTF-8` en las VM options de la configuración de ejecución.
+### Flujo de ingreso de datos
 
-## Ejemplo de salida
+1. **Cliente:** nombre, dirección, teléfono (ej. `+56 9 8765 4321`) y correo (`nombre@dominio.com`).
+   Si el teléfono o el correo son inválidos, se muestra el error y se piden de nuevo.
+2. **Dos pedidos** (el resumen final combina ambos con el operador `+`). Para cada uno:
+    - Elegir un producto del menú y su cantidad (entre 1 y 100).
+    - Indicar si se agrega otro producto (`s`/`n`).
+    - Notas opcionales (Enter para omitir).
+    - Fecha del pedido en formato `AAAA-MM-DD`. Si cae dentro del periodo de promoción
+      (2026-11-01 a 2026-11-30), se aplica el descuento a los productos `@Promocionable`.
+3. Si faltan ingredientes en el inventario, el programa lo informa y permite reabastecer para reintentar el pedido.
 
-Pedido de 4 pizzas (2 Vegetariana a $8.200 y 2 Hawaiana a $8.900):
+Al terminar se muestra el resumen final.
 
-- Subtotal: $34.200
-- Descuento (10 %): -$3.420
-- IVA (19 %): $5.848
-- Total final: $36.628
-- Estado del pedido: Listo
-
-## Conceptos de Kotlin aplicados
-
-- **Flujos de control:** `when` para verificar inventario, `if` como expresión, ciclos `for`.
-- **Arreglos y colecciones:** `Array<Pedido>`, `listOf`, `Map` / `MutableMap`, `filter`, `find`, `groupBy`, `sortedBy`, `flatMap`.
-- **Strings:** plantillas (`"$variable"` y `"${expresión}"`), expresiones regulares, `padEnd` y `padStart` para dar formato.
-- **Funciones:** funciones reutilizables, funciones de extensión y `const val`.
-- **POO:** clases, `data class`, `enum class`, herencia (`open`, `override`) y polimorfismo.
-- **Manejo de errores:** `try-catch`, `require` y excepciones (`IllegalArgumentException`, `NumberFormatException`).
-- **Nulls:** operadores `?.` y `?:`, `let` y `takeIf`.
-- - **Arreglos y colecciones:** `Array<Pedido>`, `listOf`, `Set`, `Map` / `MutableMap`, `filter`, `find`, `groupBy`, `sortedBy`, `flatMap`.
